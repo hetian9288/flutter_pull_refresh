@@ -86,7 +86,6 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
     HtRefreshCallback _onRefresh;
 
     bool _onScroll(Notification notification) {
-        print(_refreshState);
         if (notification is ScrollUpdateNotification) {
             double pixels = notification.metrics.pixels;
             setState(() {
@@ -160,17 +159,19 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
                     }
                 }
             }else{
-                if (_getPullPixelsOf(pixels) >= widget.refreshOffset){
-                    if (_refreshState != PullRefreshState.wait) {
-                        setState(() {
-                            _refreshState = PullRefreshState.wait;
-                        });
-                    }
-                }else{
-                    if (_refreshState != PullRefreshState.pull) {
-                        setState(() {
-                            _refreshState = PullRefreshState.pull;
-                        });
+                if(pixels <= 0) {
+                    if (_getPullPixelsOf(pixels) >= widget.refreshOffset){
+                        if (_refreshState != PullRefreshState.wait) {
+                            setState(() {
+                                _refreshState = PullRefreshState.wait;
+                            });
+                        }
+                    }else{
+                        if (_refreshState != PullRefreshState.pull) {
+                            setState(() {
+                                _refreshState = PullRefreshState.pull;
+                            });
+                        }
                     }
                 }
             }
