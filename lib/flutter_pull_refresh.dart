@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:flutter/services.dart';
 
 import 'package:flutter/widgets.dart';
 
@@ -22,33 +21,33 @@ abstract class HtRefreshCallback {
 typedef Widget RefresherIndicatorWidget(
         double pixels, PullRefreshState refreshState);
 
-//    FlutterPullRefresh(
-//        onRefresh: _onRefresh,
-//        refreshWidget: (double pixels, PullRefreshState refreshState){
-//            return MyRefreshIndicator(pixels:pixels, refreshState: refreshState);
-//        },
-//        indicatorHeight: 65.0,
-//        scrollController: scrollController,
-//        isMore: false,
-//        moreCallback: (){
-//            print("更多操作");
-//        },
-//        child: new StaggeredGridView.countBuilder(
-//            physics: BouncingScrollPhysics(),
-//            controller: scrollController,
-//            primary: false,
-//            crossAxisCount: 2,
-//            crossAxisSpacing: 4.0,
-//            mainAxisSpacing: 4.0,
-//            itemBuilder: _getChild,
-//            itemCount: 3000,
-//            padding: EdgeInsets.only(top: 0.0),
-//            staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
-//        ),
-//    )
-//
+// RefreshListWidget(
+//     onRefresh: HomeRefreshCallback(),
+//     refreshWidget: (double pixels, PullRefreshState refreshState) {
+//       return MyRefreshIndicator(pixels: pixels, refreshState: refreshState, height: 95.0 + 95.0,);
+//     },
+//     indicatorHeight: 95.0,
+//     expandHeight: 95.0,
+//     scrollController: scrollController,
+//     isMore: false,
+//     moreCallback: (){
+//       print("更多操作");
+//     },
+//     child: new StaggeredGridView.countBuilder(
+//       physics: BouncingScrollPhysics(),
+//       controller: scrollController,
+//       primary: false,
+//       crossAxisCount: 2,
+//       crossAxisSpacing: 4.0,
+//       mainAxisSpacing: 4.0,
+//       itemBuilder: _getChild,
+//       itemCount: 3000,
+//       padding: EdgeInsets.only(top: 95.0),
+//       staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
+//     ),
+//   )
 
-class FlutterPullRefresh extends StatefulWidget {
+class RefreshListWidget extends StatefulWidget {
     final ScrollController scrollController;
     final Widget child;
     final RefresherIndicatorWidget refreshWidget;
@@ -57,9 +56,10 @@ class FlutterPullRefresh extends StatefulWidget {
     final VoidCallback moreCallback;
 
     final double indicatorHeight;
+    final double expandHeight;
     final double refreshOffset;
 
-    FlutterPullRefresh(
+    RefreshListWidget(
             {Key key,
                 this.scrollController,
                 this.child,
@@ -68,18 +68,19 @@ class FlutterPullRefresh extends StatefulWidget {
                 this.indicatorHeight = 0.0,
                 this.onRefresh,
                 this.isMore = false,
-                this.moreCallback
+                this.moreCallback,
+                this.expandHeight = 0.0
             })
             : super(key: key);
     @override
-    _FlutterPullRefreshState createState() => _FlutterPullRefreshState();
+    _RefreshListWidgetState createState() => _RefreshListWidgetState();
 }
 
-class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
+class _RefreshListWidgetState extends State<RefreshListWidget> {
     bool _isRefresh = false;
     bool _isLoading = false;
     bool _toMore = false;
-//    bool _isAnim = false;
+    // bool _isAnim = false;
     double _pixels = 0.0;
     PullRefreshState _refreshState = PullRefreshState.not;
 
@@ -112,7 +113,6 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
                         //       .animateTo(-widget.refreshOffset,
                         //           duration: Duration(milliseconds: 300), curve: Curves.ease)
                         //       .whenComplete(() {
-                        //         HapticFeedback.mediumImpact();
                         //         _isAnim = false;
                         //       });
                         // } else {
@@ -127,7 +127,6 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
                                 _isRefresh = false;
                                 _isLoading = false;
                                 _onRefresh = null;
-                                HapticFeedback.mediumImpact();
                                 setState(() {
                                     _refreshState = PullRefreshState.not;
                                 });
@@ -145,7 +144,7 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
                                 if (_onRefresh == null) {
                                     _onRefresh = widget.onRefresh;
                                 }
-//                                _isAnim = true;
+                                // _isAnim = true;
                                 _isRefresh = true;
                             }
                         } else {
@@ -157,6 +156,8 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
                             }
                         }
                     }
+                }else{
+
                 }
             }else{
                 if(pixels <= 0) {
@@ -173,6 +174,8 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
                             });
                         }
                     }
+                }else{
+
                 }
             }
         }else if(notification is ScrollEndNotification) {
@@ -193,7 +196,14 @@ class _FlutterPullRefreshState extends State<FlutterPullRefresh> {
                 child: widget.child,
                 onNotification: _onScroll,
             ),
-            indicator: widget.refreshWidget(_pixels, _refreshState),
+            indicator: Stack(
+                    children: [
+                        Positioned(
+                                top: widget.expandHeight > 0 ? _pixels <= -widget.expandHeight ? -widget.expandHeight : _pixels >= 0 ? 0.0 : _pixels : 0.0,
+                                child: widget.refreshWidget(_pixels, _refreshState)
+                        )
+                    ]
+            ),
         );
     }
 }
@@ -211,17 +221,17 @@ class MyRefreshContainer extends StatelessWidget {
     Widget build(BuildContext context) {
         List<Widget> _children = [];
 
+        _children.add(LayoutId(
+            id: PullWidgetId.ListView,
+            child: listView,
+        ));
+
         if (indicator != null) {
             _children.add(LayoutId(
                 id: PullWidgetId.Indicator,
                 child: indicator,
             ));
         }
-
-        _children.add(LayoutId(
-            id: PullWidgetId.ListView,
-            child: listView,
-        ));
 
         return ConstrainedBox(
             constraints: BoxConstraints(
@@ -387,4 +397,3 @@ class _HtRefreshIndicatorPainter extends CustomPainter {
         return oldPainter.position != position;
     }
 }
-
