@@ -13,9 +13,6 @@ dependencies:
 
 # The following section is specific to Flutter.
 flutter:
-  plugin:
-    androidPackage: me.hetian.flutterpullrefresh
-    pluginClass: FlutterPullRefreshPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
