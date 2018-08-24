@@ -86,6 +86,7 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
 
     HtRefreshCallback _onRefresh;
 
+    double __startOffset = 0.0;
     bool _onScroll(Notification notification) {
         if (notification is ScrollUpdateNotification) {
             double pixels = notification.metrics.pixels;
@@ -156,8 +157,6 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
                             }
                         }
                     }
-                }else{
-
                 }
             }else{
                 if(pixels <= 0) {
@@ -174,12 +173,22 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
                             });
                         }
                     }
-                }else{
-
                 }
             }
-        }else if(notification is ScrollEndNotification) {
-            _toMore = false;
+        }else if(notification is UserScrollNotification) {
+          _toMore = false;
+          double pixels = notification.metrics.pixels;
+          if (widget.expandHeight > 0 && pixels > 0 && pixels < widget.expandHeight) {
+            if(notification.metrics.pixels - __startOffset > 0) {
+              widget.scrollController
+              .animateTo(widget.expandHeight, duration: Duration(milliseconds: 200), curve: Curves.ease);
+            }else if(notification.metrics.pixels - __startOffset < 0) {
+              widget.scrollController
+              .animateTo(0.0, duration: Duration(milliseconds: 200), curve: Curves.ease);
+            }
+          }
+        }else if(notification is ScrollStartNotification) {
+          __startOffset = notification.metrics.pixels;
         }
         return false;
     }
