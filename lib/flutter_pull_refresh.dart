@@ -19,7 +19,7 @@ abstract class HtRefreshCallback {
 }
 
 
-
+typedef RefreshPullCalback = Function(double, PullRefreshState);
 typedef Widget RefresherIndicatorWidget(
         double pixels, PullRefreshState refreshState);
 
@@ -56,7 +56,7 @@ class RefreshListWidget extends StatefulWidget {
     final HtRefreshCallback onRefresh;
     final bool isMore;
     final VoidCallback moreCallback;
-    RefresherIndicatorWidget refresherPull;
+    RefreshPullCalback refresherPull;
 
     final double indicatorHeight;
     final double expandHeight;
