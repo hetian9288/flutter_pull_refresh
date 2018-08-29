@@ -18,6 +18,8 @@ abstract class HtRefreshCallback {
     void cancel() {}
 }
 
+
+
 typedef Widget RefresherIndicatorWidget(
         double pixels, PullRefreshState refreshState);
 
@@ -54,6 +56,7 @@ class RefreshListWidget extends StatefulWidget {
     final HtRefreshCallback onRefresh;
     final bool isMore;
     final VoidCallback moreCallback;
+    RefresherIndicatorWidget refresherPull;
 
     final double indicatorHeight;
     final double expandHeight;
@@ -69,9 +72,14 @@ class RefreshListWidget extends StatefulWidget {
                 this.onRefresh,
                 this.isMore = false,
                 this.moreCallback,
-                this.expandHeight = 0.0
+                this.expandHeight = 0.0,
+                this.refresherPull
             })
-            : super(key: key);
+            : super(key: key){
+              if(refresherPull == null) {
+                refresherPull = (double p, PullRefreshState state) {};
+              }
+            }
     @override
     _RefreshListWidgetState createState() => _RefreshListWidgetState();
 }
@@ -106,6 +114,7 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
                                     _refreshState = PullRefreshState.not;
                                 });
                             }
+                            widget.refresherPull(_pixels, _refreshState);
                             return false;
                         }
                         widget.scrollController.jumpTo(-widget.refreshOffset);
@@ -190,6 +199,7 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
         }else if(notification is ScrollStartNotification) {
           __startOffset = notification.metrics.pixels;
         }
+        widget.refresherPull(_pixels, _refreshState);
         return false;
     }
 
