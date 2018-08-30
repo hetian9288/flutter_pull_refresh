@@ -128,11 +128,12 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
                         // } else {
                         //   widget.scrollController.jumpTo(-widget.refreshOffset);
                         // }
-                        if (_isLoading == false) {
-                            _isLoading = true;
-                            setState(() {
+                         setState(() {
                                 _refreshState = PullRefreshState.Refresh;
                             });
+                        if (_isLoading == false) {
+                            _isLoading = true;
+                           
                             _onRefresh.request().whenComplete(() {
                                 _isRefresh = false;
                                 _isLoading = false;
