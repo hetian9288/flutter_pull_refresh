@@ -44,3 +44,5 @@ flutter:
   #
   # For details regarding fonts in packages, see
   # https://flutter.io/custom-fonts/#from-packages
+environment:
+  sdk: ">=2.0.0-dev.68.0 <3.0.0"
