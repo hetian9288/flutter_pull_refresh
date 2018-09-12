@@ -98,7 +98,7 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
   HtRefreshCallback _onRefresh;
 
   @override
-  void initState() async {
+  void initState() {
     if (_onRefresh == null) {
       _onRefresh = widget.onRefresh;
     }
