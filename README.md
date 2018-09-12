@@ -2,9 +2,6 @@
 
 Flutter 下拉刷新&#x2F;继续下拉更多操作
 
-## Getting Started
+## task
 
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
-
-For help on editing plugin code, view the [documentation](https://flutter.io/developing-packages/#edit-plugin-package).
+> 增加自动加载
