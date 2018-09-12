@@ -76,7 +76,7 @@ class RefreshListWidget extends StatefulWidget {
     this.moreCallback,
     this.expandHeight = 0.0,
     this.refresherPull,
-    this.nextOffset,
+    this.nextOffset = 1.0,
   }) : super(key: key) {
     if (refresherPull == null) {
       refresherPull = (double p, PullRefreshState state) {};
