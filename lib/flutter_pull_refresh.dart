@@ -12,7 +12,7 @@ enum PullRefreshState {
   not, // 未操作/刷新/加载完毕
 }
 
-enum PullWidgetId { Indicator, ListView }
+enum PullWidgetId { Indicator, ListView, footerIndicator }
 
 abstract class HtRefreshCallback {
   Future<dynamic> refresh() async {}
@@ -54,12 +54,14 @@ class RefreshListWidget extends StatefulWidget {
   final ScrollController scrollController;
   final Widget child;
   final RefresherIndicatorWidget refreshWidget;
+  final RefresherIndicatorWidget nextWidget;
   final HtRefreshCallback onRefresh;
   final bool isMore;
   final VoidCallback moreCallback;
   RefreshPullCalback refresherPull;
 
   final double indicatorHeight;
+  final double nextWidgetHeight;
   final double expandHeight;
   final double refreshOffset;
   final double nextOffset; // 屏幕百分比
@@ -76,7 +78,9 @@ class RefreshListWidget extends StatefulWidget {
     this.moreCallback,
     this.expandHeight = 0.0,
     this.refresherPull,
-    this.nextOffset,
+    this.nextOffset = 1.0,
+    this.nextWidget,
+    this.nextWidgetHeight = 0.0,
   }) : super(key: key) {
     if (refresherPull == null) {
       refresherPull = (double p, PullRefreshState state) {};
@@ -93,15 +97,11 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
   bool _nextload = false;
   // bool _isAnim = false;
   double _pixels = 0.0;
+  double _overstepOffset = 0.0;
   PullRefreshState _refreshState = PullRefreshState.not;
 
-  HtRefreshCallback _onRefresh;
-
   @override
-  void initState() async {
-    if (_onRefresh == null) {
-      _onRefresh = widget.onRefresh;
-    }
+  void initState(){
     super.initState();
   }
 
@@ -109,8 +109,10 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
   bool _onScroll(Notification notification) {
     if (notification is ScrollUpdateNotification) {
       double pixels = notification.metrics.pixels;
+      double of = pixels - notification.metrics.maxScrollExtent;
       setState(() {
         _pixels = _getPullPixelsOf(pixels);
+        _overstepOffset = of > 0.0 ? of : 0.0;
       });
       if (notification.dragDetails == null) {
         if (pixels <= 0) {
@@ -119,7 +121,6 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
               widget.onRefresh.cancel();
               _isRefresh = false;
               _isLoading = false;
-              _onRefresh = null;
               if (_refreshState != PullRefreshState.not) {
                 setState(() {
                   _refreshState = PullRefreshState.not;
@@ -145,10 +146,9 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
             if (_isLoading == false) {
               _isLoading = true;
 
-              _onRefresh.refresh().whenComplete(() {
+              widget.onRefresh.refresh().whenComplete(() {
                 _isRefresh = false;
                 _isLoading = false;
-                _onRefresh = null;
                 setState(() {
                   _refreshState = PullRefreshState.not;
                 });
@@ -197,12 +197,12 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
           if (notification.metrics.extentAfter <
                   notification.metrics.extentInside * widget.nextOffset &&
               _nextload == false &&
-              _onRefresh.nextPage != null) {
+                  widget.onRefresh.nextPage != null) {
             setState(() {
               _nextload = true;
               _refreshState = PullRefreshState.nextPage;
             });
-            _onRefresh.nextPage().whenComplete(() {
+            widget.onRefresh.nextPage().whenComplete(() {
               setState(() {
                 _nextload = false;
                 _refreshState = PullRefreshState.not;
@@ -244,6 +244,17 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
         child: widget.child,
         onNotification: _onScroll,
       ),
+      footerIndicator: widget.nextWidget != null ? Stack(
+        overflow: Overflow.visible,
+        children: <Widget>[
+          Positioned(
+            width: MediaQuery.of(context).size.width,
+            height: widget.nextWidgetHeight,
+            child: widget.nextWidget(_pixels, _refreshState),
+            top: 12.0 - _overstepOffset,
+          )
+        ],
+      ) : null,
       indicator: Stack(children: [
         Positioned(
             top: widget.expandHeight > 0
@@ -260,10 +271,12 @@ class _RefreshListWidgetState extends State<RefreshListWidget> {
 class MyRefreshContainer extends StatelessWidget {
   final Widget listView;
   final Widget indicator;
+  final Widget footerIndicator;
   final double indicatorHeight;
+  final double nextWidgetHeight;
 
   MyRefreshContainer(
-      {Key key, this.listView, this.indicator, this.indicatorHeight})
+      {Key key, this.listView, this.indicator, this.indicatorHeight, this.footerIndicator, this.nextWidgetHeight = 0.0})
       : super(key: key);
 
   @override
@@ -282,13 +295,21 @@ class MyRefreshContainer extends StatelessWidget {
       ));
     }
 
+
+    if (footerIndicator != null) {
+      _children.add(LayoutId(
+        id: PullWidgetId.footerIndicator,
+        child: footerIndicator,
+      ));
+    }
+
     return ConstrainedBox(
       constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width,
           maxHeight: MediaQuery.of(context).size.height),
       child: CustomMultiChildLayout(
         delegate:
-            _MyRefreshContainerLayoutDelegate(indicatorHeight: indicatorHeight),
+            _MyRefreshContainerLayoutDelegate(context, indicatorHeight: indicatorHeight, nextWidgetHeight: nextWidgetHeight),
         children: _children,
       ),
     );
@@ -297,8 +318,10 @@ class MyRefreshContainer extends StatelessWidget {
 
 class _MyRefreshContainerLayoutDelegate extends MultiChildLayoutDelegate {
   final double indicatorHeight;
+  final double nextWidgetHeight;
+  final BuildContext context;
 
-  _MyRefreshContainerLayoutDelegate({this.indicatorHeight}) : super();
+  _MyRefreshContainerLayoutDelegate(this.context, {this.indicatorHeight, this.nextWidgetHeight = 0.0});
 
   @override
   void performLayout(Size size) {
@@ -310,6 +333,11 @@ class _MyRefreshContainerLayoutDelegate extends MultiChildLayoutDelegate {
     if (hasChild(PullWidgetId.ListView)) {
       layoutChild(PullWidgetId.ListView, BoxConstraints.tight(size));
       positionChild(PullWidgetId.ListView, Offset(0.0, indicatorHeight));
+    }
+
+    if (hasChild(PullWidgetId.footerIndicator)) {
+      layoutChild(PullWidgetId.footerIndicator, BoxConstraints.loose(size));
+      positionChild(PullWidgetId.footerIndicator, Offset(0.0, size.height - MediaQuery.of(context).padding.bottom));
     }
   }
 
